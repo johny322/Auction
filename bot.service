@@ -6,8 +6,8 @@ After=multi-user.target
 [Service]
 
 Type=idle
-WorkingDirectory=/root/sms_bot
-ExecStart=/root/sms_bot/venv/bin/python bot.py
+WorkingDirectory=/root/bot
+ExecStart=/root/bot/venv/bin/python bot.py
 Restart=always
 
 [Install]
