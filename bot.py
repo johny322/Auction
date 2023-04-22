@@ -1,12 +1,11 @@
 import asyncio
+import logging
 from typing import List
 
 from aiogram import Bot, Dispatcher
 from aiogram.dispatcher.fsm.storage.memory import MemoryStorage
-from tgbot.handlers.payment import payment_router
-from tgbot.services.sms.services_combiner import check_apis
 
-from globals import config, banker, logger
+from tgbot.config import load_config
 from tgbot.db.database import create_db
 from tgbot.handlers.admin import admin_router
 from tgbot.handlers.users import user_router
@@ -17,12 +16,35 @@ from tgbot.middlewares.users import GetUserMiddleware
 from tgbot.misc.bot_commands import set_bot_commands
 from tgbot.services import broadcaster
 
+config = load_config(".env")
+
+
+def setup_logger():
+    logger = logging.getLogger('main_logger')
+    logger.propagate = False
+    logger.setLevel(logging.DEBUG)
+    # strfmt = '[%(asctime)s] [%(levelname)s] %(message)s'
+    strfmt = "[%(asctime)s] [%(levelname)-8s] --- %(message)s (%(filename)s:%(funcName)s:%(lineno)s)"
+
+    datefmt = '%Y-%m-%d %H:%M:%S'
+    formatter = logging.Formatter(strfmt, datefmt)
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
+    logger.info('Set up logger')
+    # logger.info('Set up logger', extra={'d': {'detail': 'new line'}})
+
+    return logger
+
+
+logger = setup_logger()
+
 
 async def on_startup(bot: Bot, admin_ids: List[int]):
     await create_db()
-    await banker.start()
     await set_bot_commands(bot, admin_ids)
-    await check_apis()
     await broadcaster.broadcast(bot, admin_ids, "Бот был запущен")
 
 
@@ -50,7 +72,6 @@ async def main():
     for router in [
         admin_router,
         user_router,
-        payment_router,
         # echo_router,
     ]:
         dp.include_router(router)
