@@ -1,5 +1,7 @@
 from aiogram.utils.markdown import hbold
 
+choose_pay_type_text = '👇 Выберите тип оплаты'
+
 send_banker_cheque_text = '''
 Отправьте чек на сумму {pay_size}₽
 

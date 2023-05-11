@@ -2,7 +2,7 @@ from aiogram import Router, types
 from aiogram.dispatcher.fsm.context import FSMContext
 
 from tgbot import texts
-from tgbot.keyboards.reply import main_menu_keyboard_reply, main_menu_keyboard_reply
+from tgbot.keyboards.reply import start_keyboard
 from tgbot.texts import keyboard_texts
 
 cancel_router = Router()
@@ -14,7 +14,7 @@ async def cancel_all_handler(query: types.CallbackQuery, state: FSMContext):
     await query.message.delete()
     await query.message.answer(
         text=texts.success_cancel_text,
-        reply_markup=main_menu_keyboard_reply
+        reply_markup=start_keyboard
     )
 
 
@@ -23,5 +23,5 @@ async def go_to_start_menu_handler(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer(
         text=texts.choose_menu_text,
-        reply_markup=main_menu_keyboard_reply
+        reply_markup=start_keyboard
     )
