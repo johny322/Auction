@@ -2,7 +2,7 @@ import logging
 from typing import Callable, Dict, Any, Awaitable, Union
 
 from aiogram import BaseMiddleware
-from aiogram.dispatcher.flags.getter import get_flag
+from aiogram.dispatcher.flags import get_flag
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.chat_action import ChatActionSender
 

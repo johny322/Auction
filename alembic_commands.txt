@@ -1,0 +1,2 @@
+alembic revision --m="NAME" --autogenerate
+alembic upgrade head

@@ -42,3 +42,16 @@ confirming_user_disable_advertising_text = 'Отключить рекламу д
                                            '@{username} {fullname} {user_id}?'
 
 good_disable_advertising_text = 'Реклама у пользователя успешно отключена'
+
+confirm_user_reg_data_text = 'Подтвердить данные нового пользователя (tg id: {tg_user_id})?\n' \
+                             'Последняя фотография не будет отображаться в карточке и нужна только для ' \
+                             'подтверждения личности'
+
+confirm_change_account_data_text = 'Подтвердить <b>новые</b> данные старого пользователя (tg id: {tg_user_id})?\n' \
+                                   'Последняя фотография не будет отображаться в карточке и нужна только для ' \
+                                   'подтверждения личности'
+
+good_confirm_user_reg_data_text = 'Данные подтверждены'
+answer_review_text = 'Отправьте причину отказа подтверждения'
+confirm_answer_review_text = 'Отправить данное сообщение?\n{}'
+good_answer_review_text = 'Сообщение было отправлено'

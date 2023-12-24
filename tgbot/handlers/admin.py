@@ -1,25 +1,17 @@
-from typing import Optional
-
 from aiogram import Router, types
-from aiogram.dispatcher.filters import CommandObject
-from aiogram.dispatcher.filters.command import CommandStart
-from aiogram.dispatcher.fsm.context import FSMContext
+from aiogram.filters import Command
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from tgbot import texts
-from tgbot.db.models import User
+from tgbot.db import db_commands
 from tgbot.filters.admin import AdminFilter
-from tgbot.keyboards.reply import start_keyboard
 
 admin_router = Router()
 admin_router.message.filter(AdminFilter())
 
 
-@admin_router.message(CommandStart(), state="*")
-async def admin_start(message: types.Message, state: FSMContext, command: CommandObject, user: Optional[User]):
-    await state.clear()
-    text = texts.start_admin_message_text
-
-    await message.answer(
-        text=text,
-        reply_markup=start_keyboard
-    )
+@admin_router.message(Command('cities'))
+async def cities_handler(message: types.Message, session: AsyncSession):
+    print(await db_commands.get_girls_cities(session))
+    girls_data = await db_commands.get_users_data(session)
+    for girl_data in girls_data:
+        print(girl_data.get_reg_kwargs())
