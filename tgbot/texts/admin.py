@@ -14,7 +14,7 @@ mail_statistic_text = """
 Последнее обновление
 <b>{last_update}</b>
 """
-
+mail_start_text = '<b>Начинаю рассылку!</b>'
 mail_end_text = "<b>Рассылка закончилась</b>"
 mail_cancel_text = "<b>Рассылка отменена</b>"
 

@@ -4,7 +4,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from tgbot.constants.callback_factory import ConfirmCallbackData, CancelCD, PaginationCD, CloseCD, \
-    current_page_callback
+    current_page_callback, YesNoCD, ConfirmPayoutCD, close_advertisement_message, disable_advertising_callback
 from tgbot.texts import keyboard_texts
 
 
@@ -94,3 +94,71 @@ def close_keyboard(payload: str) -> InlineKeyboardMarkup:
     )
     return builder.as_markup()
 
+
+def yes_no_keyboard_inline(payload=None) -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=keyboard_texts.btn_yes,
+                    callback_data=YesNoCD(yes=True, no=False, payload=payload).pack()
+                ),
+                InlineKeyboardButton(
+                    text=keyboard_texts.btn_no,
+                    callback_data=YesNoCD(yes=False, no=True, payload=payload).pack()
+                ),
+            ]
+        ]
+    )
+    return keyboard
+
+
+cancel_keyboard_inline = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=keyboard_texts.btn_cancel,
+                callback_data='cancel'
+            )
+        ]
+    ]
+)
+
+
+def confirm_payout_keyboard_inline(payout_id: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.add(
+        InlineKeyboardButton(
+            text=keyboard_texts.btn_confirm,
+            callback_data=ConfirmPayoutCD(payout_id=payout_id, confirm=True).pack()
+        )
+    )
+    builder.add(
+        InlineKeyboardButton(
+            text=keyboard_texts.btn_reject,
+            callback_data=ConfirmPayoutCD(payout_id=payout_id, confirm=False).pack()
+        )
+    )
+    builder.adjust(2)
+    return builder.as_markup()
+
+
+def disable_advertising_keyboard():
+    keyboard_inline = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=keyboard_texts.btn_close,
+                    callback_data=close_advertisement_message
+                ),
+            ],
+            # [
+            #
+            #     InlineKeyboardButton(
+            #         text=keyboard_texts.btn_disable_advertising,
+            #         callback_data=disable_advertising_callback
+            #     )
+            # ]
+        ]
+    )
+    return keyboard_inline

@@ -23,7 +23,6 @@ class AntiFloodMiddleware(BaseMiddleware):
         user = event.from_user.id
         name = f'{user}_flood'
         check_user = await self.storage.redis.get(name=name)
-        print(f'{check_user=}')
         if check_user:
             await self.storage.redis.set(name=name, value=1, ex=consts.THROTTLE_TIME)
             text = texts.anti_flood_message_text.format(consts.THROTTLE_TIME)

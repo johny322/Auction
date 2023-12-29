@@ -1,14 +1,15 @@
 import asyncio
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, Tuple
 
 from sqlalchemy import select, delete, update, func, exists
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from tgbot.config import load_config
 from tgbot.constants import consts
+from tgbot.constants.consts import ADMIN_PERCENT, MINIMAL_BET_SIZE
+from tgbot.misc.utils.date_worker import get_now_datetime
 from .database import create_session_maker, create_async_engine
-from .models import User, UserPhoto, UserData, CityModel, View, SubscriptionTypeModel, BaseModel, UserType, UserStatus, \
-    UserVerificationPhoto, BotSettings
+from .models import User, BaseModel, BotSettings, Auction, AuctionHistory, AuctionStatus, Payout
 
 """
 во всех функциях объект session: AsyncSession передается после выполнения кода ниже, 
@@ -20,7 +21,7 @@ from .models import User, UserPhoto, UserData, CityModel, View, SubscriptionType
 объект session будет пробрасываться в хендлеры через мидлварь
 """
 
-MODEL = Union[User, UserPhoto, UserData, CityModel, View, SubscriptionTypeModel]
+MODEL = Union[User, BaseModel, BotSettings, Auction, AuctionHistory]
 
 
 # MODEL = Union[Type[User], Type[UserPhoto], Type[UserData], Type[CityModel], Type[View], Type[SubscriptionTypeModel]]
@@ -54,125 +55,131 @@ async def add_user(session: AsyncSession, **kwargs) -> Optional[User]:
     return None
 
 
-async def get_user_photos(session: AsyncSession, user_id: int) -> Sequence[UserPhoto]:
-    """unblur photos"""
-    stmt = select(UserPhoto).where(UserPhoto.user.has(id=user_id), UserPhoto.blur == False)
-    res = await session.scalars(stmt)
-    user_photos = res.all()
-    return user_photos
-
-
-async def get_all_user_photos(session: AsyncSession, user_id: int) -> Sequence[UserPhoto]:
-    stmt = select(UserPhoto).where(UserPhoto.user.has(id=user_id))
-    res = await session.scalars(stmt)
-    user_photos = res.all()
-    return user_photos
-
-
-async def add_user_photos(session: AsyncSession, **kwargs) -> Optional[UserPhoto]:
-    new_obj = await add_object(session, UserPhoto, **kwargs)
-    return new_obj
-
-
-async def get_user_blur_photos(session: AsyncSession, user_id: int) -> Sequence[UserPhoto]:
-    stmt = select(UserPhoto).where(UserPhoto.user.has(id=user_id), UserPhoto.blur == True)
-    res = await session.scalars(stmt)
-    user_photos = res.all()
-    return user_photos
-
-
-async def add_user_verification_photo(session: AsyncSession, **kwargs) -> UserVerificationPhoto:
-    new_obj = await add_object(session, UserVerificationPhoto, **kwargs)
-    return new_obj
-
-
-async def get_last_user_verification_photo(session: AsyncSession, user_id: int = None, tg_user_id: int = None) -> \
-        Optional[UserVerificationPhoto]:
-    if user_id is not None:
-        filter_ = UserVerificationPhoto.user_id == user_id
-    else:
-        filter_ = User.tg_user_id == tg_user_id
-    stmt = select(UserVerificationPhoto).join(User).where(**filter_).order_by(
-        UserVerificationPhoto.updated_at
-    )
-    res = await session.scalar(stmt)
-    return res
-
-
-async def add_user_data(session: AsyncSession, **kwargs) -> UserData:
-    new_obj = await add_object(session, UserData, **kwargs)
-    return new_obj
-
-
-async def get_users_data_by_city(session: AsyncSession, user_type: UserType, city_full_name: str) -> Sequence[UserData]:
-    # stmt = select(UserData).where(UserData.user_type == user_type, UserData.city == city)
-    # stmt = select(UserData).where(UserData.user_type.has(name=user_type), UserData.city.has(full_name=city))
-    stmt = select(UserData).join(UserType).join(CityModel).where(
-        UserType.name == user_type, CityModel.full_name == city_full_name
-    )
+async def users_to_mails(session: AsyncSession) -> Sequence[User]:
+    stmt = select(User).where(User.disable_ads == False)
     res = await session.scalars(stmt)
     return res.all()
 
 
-async def get_cities_by_user_type(session: AsyncSession, user_type: str) -> Sequence[str]:
-    stmt = select(CityModel.full_name).select_from(User).join(UserData.city) \
-        .where(UserData.user_type.has(name=user_type)).distinct()
-    res = await session.scalars(stmt)
-    return res.all()
-
-
-async def get_cities_data_by_user_type(session: AsyncSession, user_type: str) -> Sequence[CityModel]:
-    stmt = select(CityModel).select_from(User).join(UserData.city) \
-        .where(UserData.user_type.has(name=user_type)).distinct()
-    res = await session.scalars(stmt)
-    return res.all()
-
-
-async def get_girls_cities(session: AsyncSession) -> Sequence[str]:
-    stmt = select(CityModel.full_name).join(UserData.city) \
-        .where(UserData.user_type.has(name='girl')).distinct()
-    res = await session.scalars(stmt)
-    return res.all()
-
-
-async def get_user_data(session: AsyncSession, user_id) -> Optional[UserData]:
-    stmt = select(UserData).where(UserData.user_id == user_id)
-    res = await session.scalar(stmt)
-    return res
-
-
-async def get_users_data(session: AsyncSession) -> Sequence[UserData]:
-    return (await session.scalars(select(UserData))).all()
-
-
-async def update_user_data(session: AsyncSession, user_id: int, **kwargs) -> Sequence[UserData]:
-    stmt = update(UserData).where(UserData.user_id == user_id).values(**kwargs).returning(UserData)
-    res = await session.execute(stmt)
-    await session.flush()
-    return res.scalars().all()
-
-
-async def delete_user_data(session: AsyncSession, user_id: int) -> None:
-    stmt = delete(UserData).where(UserData.user_id == user_id)
-    res = await session.execute(stmt)
-    stmt = delete(UserPhoto).where(UserPhoto.user_id == user_id)
-    res = await session.execute(stmt)
-    await session.flush()
-
-
-async def full_delete_user(session: AsyncSession, tg_user_id: int, user: User = None) -> None:
-    if user is None:
-        user = await get_user(session, tg_user_id)
-    if not user:
-        return
-    stmt1 = delete(User).where(User.tg_user_id == tg_user_id)
-    stmt2 = delete(UserData).where(UserData.user == user)
-    stmt3 = delete(UserPhoto).where(UserPhoto.user == user)
-
-    await session.execute(stmt1)
-    await session.execute(stmt2)
-    await session.execute(stmt3)
-    await session.flush()
+# async def get_user_photos(session: AsyncSession, user_id: int) -> Sequence[UserPhoto]:
+#     """unblur photos"""
+#         stmt = select(UserPhoto).where(UserPhoto.user.has(id=user_id), UserPhoto.blur == False)
+#         res = await session.scalars(stmt)
+#         user_photos = res.all()
+#         return user_photos
+#
+#
+# async def get_all_user_photos(session: AsyncSession, user_id: int) -> Sequence[UserPhoto]:
+#     stmt = select(UserPhoto).where(UserPhoto.user.has(id=user_id))
+#     res = await session.scalars(stmt)
+#     user_photos = res.all()
+#     return user_photos
+#
+#
+# async def add_user_photos(session: AsyncSession, **kwargs) -> Optional[UserPhoto]:
+#     new_obj = await add_object(session, UserPhoto, **kwargs)
+#     return new_obj
+#
+#
+# async def get_user_blur_photos(session: AsyncSession, user_id: int) -> Sequence[UserPhoto]:
+#     stmt = select(UserPhoto).where(UserPhoto.user.has(id=user_id), UserPhoto.blur == True)
+#     res = await session.scalars(stmt)
+#     user_photos = res.all()
+#     return user_photos
+#
+#
+# async def add_user_verification_photo(session: AsyncSession, **kwargs) -> UserVerificationPhoto:
+#     new_obj = await add_object(session, UserVerificationPhoto, **kwargs)
+#     return new_obj
+#
+#
+# async def get_last_user_verification_photo(session: AsyncSession, user_id: int = None, tg_user_id: int = None) -> \
+#         Optional[UserVerificationPhoto]:
+#     if user_id is not None:
+#         filter_ = UserVerificationPhoto.user_id == user_id
+#     else:
+#         filter_ = User.tg_user_id == tg_user_id
+#     stmt = select(UserVerificationPhoto).join(User).where(**filter_).order_by(
+#         UserVerificationPhoto.updated_at
+#     )
+#     res = await session.scalar(stmt)
+#     return res
+#
+#
+# async def add_user_data(session: AsyncSession, **kwargs) -> UserData:
+#     new_obj = await add_object(session, UserData, **kwargs)
+#     return new_obj
+#
+#
+# async def get_users_data_by_city(session: AsyncSession, user_type: UserType, city_full_name: str) -> Sequence[UserData]:
+#     # stmt = select(UserData).where(UserData.user_type == user_type, UserData.city == city)
+#     # stmt = select(UserData).where(UserData.user_type.has(name=user_type), UserData.city.has(full_name=city))
+#     stmt = select(UserData).join(UserType).join(CityModel).where(
+#         UserType.name == user_type, CityModel.full_name == city_full_name
+#     )
+#     res = await session.scalars(stmt)
+#     return res.all()
+#
+#
+# async def get_cities_by_user_type(session: AsyncSession, user_type: str) -> Sequence[str]:
+#     stmt = select(CityModel.full_name).select_from(User).join(UserData.city) \
+#         .where(UserData.user_type.has(name=user_type)).distinct()
+#     res = await session.scalars(stmt)
+#     return res.all()
+#
+#
+# async def get_cities_data_by_user_type(session: AsyncSession, user_type: str) -> Sequence[CityModel]:
+#     stmt = select(CityModel).select_from(User).join(UserData.city) \
+#         .where(UserData.user_type.has(name=user_type)).distinct()
+#     res = await session.scalars(stmt)
+#     return res.all()
+#
+#
+# async def get_girls_cities(session: AsyncSession) -> Sequence[str]:
+#     stmt = select(CityModel.full_name).join(UserData.city) \
+#         .where(UserData.user_type.has(name='girl')).distinct()
+#     res = await session.scalars(stmt)
+#     return res.all()
+#
+#
+# async def get_user_data(session: AsyncSession, user_id) -> Optional[UserData]:
+#     stmt = select(UserData).where(UserData.user_id == user_id)
+#     res = await session.scalar(stmt)
+#     return res
+#
+#
+# async def get_users_data(session: AsyncSession) -> Sequence[UserData]:
+#     return (await session.scalars(select(UserData))).all()
+#
+#
+# async def update_user_data(session: AsyncSession, user_id: int, **kwargs) -> Sequence[UserData]:
+#     stmt = update(UserData).where(UserData.user_id == user_id).values(**kwargs).returning(UserData)
+#     res = await session.execute(stmt)
+#     await session.flush()
+#     return res.scalars().all()
+#
+#
+# async def delete_user_data(session: AsyncSession, user_id: int) -> None:
+#     stmt = delete(UserData).where(UserData.user_id == user_id)
+#     res = await session.execute(stmt)
+#     stmt = delete(UserPhoto).where(UserPhoto.user_id == user_id)
+#     res = await session.execute(stmt)
+#     await session.flush()
+#
+#
+# async def full_delete_user(session: AsyncSession, tg_user_id: int, user: User = None) -> None:
+#     if user is None:
+#         user = await get_user(session, tg_user_id)
+#     if not user:
+#         return
+#     stmt1 = delete(User).where(User.tg_user_id == tg_user_id)
+#     stmt2 = delete(UserData).where(UserData.user == user)
+#     stmt3 = delete(UserPhoto).where(UserPhoto.user == user)
+#
+#     await session.execute(stmt1)
+#     await session.execute(stmt2)
+#     await session.execute(stmt3)
+#     await session.flush()
 
 
 async def update_user(session: AsyncSession, tg_user_id, **kwargs) -> Optional[User]:
@@ -207,114 +214,22 @@ async def get_users_count(session: AsyncSession) -> int:
     return res
 
 
-async def get_user_referrals_count(session: AsyncSession, user_id: int) -> int:
-    stmt = select(func.count(User.id)).where(User.referral_user_id == user_id)
-    res = await session.scalar(stmt)
-    return res
-
-
 async def get_users_with_balance(session: AsyncSession, min_balance=0) -> Sequence[User]:
     stmt = select(User).where(User.balance > min_balance)
     res = await session.scalars(stmt)
     return res.all()
 
 
-async def add_city(session: AsyncSession, **kwargs) -> CityModel:
-    new_obj = await add_object(session, CityModel, **kwargs)
-    return new_obj
-
-
-async def get_city(session: AsyncSession, city_id: int) -> Optional[CityModel]:
-    stmt = select(CityModel).where(CityModel.id == city_id)
-    res = await session.scalar(stmt)
-    return res
-
-
-async def get_city_by_full_name(session: AsyncSession, full_name: str) -> Optional[CityModel]:
-    stmt = select(CityModel).where(CityModel.full_name == full_name)
-    res = await session.scalar(stmt)
-    return res
-
-
-async def get_country_cities(session: AsyncSession, country: str) -> Sequence[CityModel]:
-    stmt = select(CityModel).where(CityModel.country == country)
-    res = await session.scalars(stmt)
-    return res.all()
-
-
-async def add_view(session: AsyncSession, user_id: int, viewer_user_id: int, profile_view=False, phone_view=False) -> \
-        Optional[View]:
-    stmt = select(
-        exists(
-            select(View).where(
-                View.user_id == user_id,
-                View.viewer_user_id == viewer_user_id,
-                View.profile_view == profile_view,
-                View.phone_view == phone_view,
-            )
-        )
-    )
-    exist = await session.scalar(stmt)
-    if not exist:
-        new_obj = await add_object(
-            session, View, user_id=user_id, viewer_user_id=viewer_user_id,
-            profile_view=profile_view, phone_view=phone_view
-        )
-        return new_obj
-
-
-async def add_sub_types(session: AsyncSession, **kwargs) -> SubscriptionTypeModel:
-    new_obj = await add_object(session, SubscriptionTypeModel, **kwargs)
-    return new_obj
-
-
-async def get_sub_types(session: AsyncSession, user_type_id: int = None) -> Union[
-    Sequence[SubscriptionTypeModel], SubscriptionTypeModel]:
-    if user_type_id:
-        stmt = select(SubscriptionTypeModel).where(SubscriptionTypeModel.user_type_id == user_type_id)
-        res = await session.scalar(stmt)
-        return res
-    stmt = select(SubscriptionTypeModel)
-    res = await session.scalars(stmt)
-    return res.all()
-
-
-async def get_sub_type(session: AsyncSession, sub_type_id: int) -> Optional[SubscriptionTypeModel]:
-    stmt = select(SubscriptionTypeModel).where(SubscriptionTypeModel.id == sub_type_id)
-    res = await session.scalar(stmt)
-    return res
-
-
-async def get_sub_type_by_period(session: AsyncSession, period_in_days: int) -> SubscriptionTypeModel:
-    stmt = select(SubscriptionTypeModel).where(SubscriptionTypeModel.period_in_days == period_in_days)
-    res = await session.scalar(stmt)
-    return res
-
-
-async def get_user_type_by_name(session: AsyncSession, name: str) -> Optional[UserType]:
-    stmt = select(UserType).where(UserType.name == name)
-    res = await session.scalar(stmt)
-    return res
-
-
-async def get_user_status_by_name(session: AsyncSession, name: str) -> Optional[UserStatus]:
-    stmt = select(UserStatus).where(UserStatus.name == name)
-    res = await session.scalar(stmt)
-    return res
-
-
-async def add_start_admins(session: AsyncSession):
-    config = load_config('.env')
-    admin_ids = config.tg_bot.admin_ids
-    stmt = update(User).where(User.tg_user_id.in_(admin_ids), is_admin=False)
-    res = await session.execute(stmt)
-    await session.flush()
-    return res.scalars().all()
-
-
 async def get_bot_settings(session: AsyncSession) -> Optional[BotSettings]:
     stmt = select(BotSettings)
     res = await session.scalar(stmt)
+    return res
+
+
+async def update_bot_settings(session: AsyncSession, bot_settings_id: int, **kwargs) -> BotSettings:
+    stmt = update(BotSettings).where(BotSettings.id == bot_settings_id).values(**kwargs).returning(BotSettings)
+    res = await session.scalar(stmt)
+    await session.flush()
     return res
 
 
@@ -326,12 +241,80 @@ async def add_start_settings(async_session: async_sessionmaker[AsyncSession]):
                 return bot_settings
             await add_object(
                 session, BotSettings,
-                terms_of_use_url=consts.TERMS_OF_USE_URL,
-                terms_of_use_path=consts.TERMS_OF_USE_FILE_PATH.as_posix(),
-                max_profile_photo_count=consts.MAX_PROFILE_PHOTO_COUNT,
-                min_days_count_for_change_profile_data=consts.MIN_DAYS_COUNT_FOR_CHANGE_PROFILE_DATA,
-                max_about_length=consts.MAX_ABOUT_LENGTH
+                admin_percent=ADMIN_PERCENT,
+                minimal_bet_size=MINIMAL_BET_SIZE
             )
+
+
+async def get_auction(session: AsyncSession, auction_id: int) -> Optional[Auction]:
+    return await get_object(session, Auction, auction_id)
+
+
+async def add_auction(session: AsyncSession, **kwargs) -> Tuple[Auction, AuctionHistory]:
+    auction = await add_object(
+        session, Auction,
+        **kwargs
+    )
+    await session.flush()
+    auction_history = await add_object(
+        session, AuctionHistory,
+        auction_id=auction.id,
+        bet=kwargs['last_bet_sum'],
+        user_id=kwargs['creator_id']
+    )
+    await session.flush()
+    return auction, auction_history
+
+
+async def update_auction(session: AsyncSession, auction_id: int, **kwargs) -> Tuple[Auction, AuctionHistory]:
+    stmt = update(Auction).where(Auction.id == auction_id).values(**kwargs).returning(Auction)
+    auction = await session.scalar(stmt)
+    await session.flush()
+    auction_history = await add_object(
+        session, AuctionHistory,
+        auction_id=auction.id,
+        bet=kwargs.get('last_bet_sum') or auction.last_bet_sum,
+        user_id=kwargs.get('last_user_id') or auction.last_user_id
+    )
+    await session.flush()
+    return auction, auction_history
+
+
+async def has_active_auction(session: AsyncSession) -> Optional[Auction]:
+    stmt = select(Auction).where(Auction.status == AuctionStatus.active.value)
+    res = await session.scalar(stmt)
+    return res
+
+
+async def get_payout(session: AsyncSession, payout_id) -> Optional[Payout]:
+    payout = await get_object(
+        session, Payout, payout_id
+    )
+    await session.flush()
+    return payout
+
+
+async def add_payout(session: AsyncSession, **kwargs) -> Payout:
+    payout = await add_object(
+        session, Payout,
+        **kwargs
+    )
+    await session.flush()
+    return payout
+
+
+async def update_payout(session: AsyncSession, payout_id: int, **kwargs) -> Payout:
+    stmt = update(Payout).where(Payout.id == payout_id).values(**kwargs).returning(Payout)
+    payout = await session.scalar(stmt)
+    await session.flush()
+    return payout
+
+
+# async def add_auction_history(session: AsyncSession, **kwargs) -> Optional[Auction]:
+#     return await add_object(
+#         session, Auction,
+#         **kwargs
+#     )
 
 
 async def test():
@@ -343,18 +326,7 @@ async def test():
         await conn.run_sync(BaseModel.metadata.create_all)
     async with async_session() as session:  # type: AsyncSession
         async with session.begin():
-            # print(await get_object(session, UserData, 1))
-            # res = await get_object(session, UserData, 1)
-            # print(res.get_reg_kwargs())
-            res = await get_sub_types(session)
-            print(f"{res=}")
-            # print('user status pre', (await res.awaitable_attrs.status).name)
-            # sub_type = await get_sub_type(session, 1)
-            #
-            # print('update_subscription', await res.update_subscription(session, sub_type))
-            # # res = await get_user(session, 2223)
-            # # print(f"{res=}")
-            # # print('user status after', (await res.awaitable_attrs.status).name)
+            pass
 
 
 if __name__ == '__main__':

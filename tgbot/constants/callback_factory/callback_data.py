@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from sys import prefix
 
 # from aiogram.dispatcher.filters.callback_data import CallbackData
@@ -7,19 +8,23 @@ from aiogram.filters.callback_data import CallbackData
 from aiohttp import payload
 
 
+@dataclass
+class ProfileMenuCD:
+    add_money = 'add_money'
+    withdraw_money = 'withdraw_money'
+    auction = 'auction'
+
+
+class YesNoCD(CallbackData, prefix='yn'):
+    yes: bool
+    no: bool
+    payload: Optional[str] = None
+
+
 class ConfirmCallbackData(CallbackData, prefix="cf"):
     payload: Optional[str] = None
     confirm: bool = True
     extra: Optional[str] = None
-
-
-class ConfirmRegCallbackData(CallbackData, prefix="cf_reg"):
-    payload: Optional[str] = None
-    confirm: bool = True
-
-
-class BuySubCD(CallbackData, prefix="buy_sub"):
-    sub_type_id: Optional[int] = None
 
 
 class CancelCD(CallbackData, prefix="cancel"):
@@ -36,36 +41,38 @@ class PaginationCD(CallbackData, prefix="pag"):
     payload: Optional[str] = None
 
 
-class ShowPhoneNumberCD(CallbackData, prefix="show_phone"):
-    db_user_id: int  # id модели в бд
-
-
-class BuyPhoneNumberCD(CallbackData, prefix="buy_phone"):
-    user_id: int  # id модели в бд
-    city_id: int
-    page: int  # номер страницы для создания клавиатуры с пагинацией
-
-
 class PaymentCD(CallbackData, prefix="payment"):
     payment_type: str
-    period_in_days: int
-    price: float
-    currency: str
-    status_id: int
+    pay_size: int
 
 
-class InvoicePayload(CallbackData, prefix="iv"):
-    days: int
-    old_message_id: int
+class PayoutCD(CallbackData, prefix="payout"):
+    payment_type: str
+
+
+class ConfirmPayoutCD(CallbackData, prefix="c_payout"):
+    payout_id: int
+    confirm: bool
+
+
+class PaymentCheckCD(CallbackData, prefix="payment_ch"):
+    payment_type: str
+
+
+class NewBetSizeCD(CallbackData, prefix="new_bet"):
+    new_bet: int
 
 
 agree_agreement = 'agree_agreement'
-cancel_search = 'cancel_search'
 current_page_callback = 'current_page'
-show_phone_number_callback = 'show_phone_number_callback'
-close_sup_type = 'close_sup_type'
 close_payment_type = 'close_payment_type'
 close_payment = 'close_payment'
-account_statistics_cd = 'account_statistics'
-close_profile_info = 'close_profile_info'
-change_account_data_cd = 'change_account_data'
+start_auction_cd = 'start_auction'
+pay_cancel_cd = 'pay_cancel'
+start_auction_payload = 'start_auction'
+show_balance_in_chanel_cd = 'show_balance_ic'
+admin_payout_payload = 'a_payout'
+admin_mail_payload = 'a_mail'
+
+disable_advertising_callback = 'disable_adv'
+close_advertisement_message = 'close_adv'

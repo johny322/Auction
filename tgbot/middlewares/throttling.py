@@ -20,7 +20,6 @@ class ThrottlingMiddleware(BaseMiddleware):
         text = texts.anti_flood_message_text.format(consts.BLOCKED_THROTTLE_TIME)
         user_id = event.from_user.id
         name = f'{user_id}_flood'
-        print(cache.values())
         if name in cache or name in blocked_cache:
             if isinstance(event, types.Message):
                 await event.answer(text)

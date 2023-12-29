@@ -46,9 +46,23 @@ class TgBot:
     use_redis: bool
     admin_username: str
     provider_token: str
+    main_chanel_url: str
+    main_chanel_id: int
+    reserve_chanel_url: str
+    news_chanel_url: str
+    payout_chanel_url: str
+    payout_chanel_id: int
 
     def bot_link(self):
         return f'https://t.me/{self.bot_username}'
+
+
+@dataclass
+class Payments:
+    crypto_bot_token: str
+    anypay_api_id: str
+    anypay_api_key: str
+    anypay_project_id: int
 
 
 @dataclass
@@ -56,9 +70,10 @@ class Config:
     tg_bot: TgBot
     db: DbConfig
     db_redis: DbRedis
+    payments: Payments
 
 
-def load_config(path: str = None):
+def load_config(path: str = None) -> Config:
     env = Env()
     env.read_env(path)
 
@@ -70,7 +85,12 @@ def load_config(path: str = None):
             use_redis=env.bool("USE_REDIS"),
             admin_username=env.str('ADMIN_USERNAME'),
             provider_token=env.str('PROVIDER_TOKEN'),
-
+            main_chanel_url=env.str('MAIN_CHANEL_URL'),
+            main_chanel_id=env.int('MAIN_CHANEL_ID'),
+            reserve_chanel_url=env.str('RESERVE_CHANEL_URL'),
+            news_chanel_url=env.str('NEWS_CHANEL_URL'),
+            payout_chanel_url=env.str('PAYOUT_CHANEL_URL'),
+            payout_chanel_id=env.int('PAYOUT_CHANEL_ID'),
         ),
         db=DbConfig(
             host=env.str('DB_HOST'),
@@ -87,5 +107,11 @@ def load_config(path: str = None):
             username=env.str('DB_REDIS_USER', None),
             password=env.str('DB_REDIS_PASSWORD', None),
 
+        ),
+        payments=Payments(
+            crypto_bot_token=env.str('CRYPTO_BOT_TOKEN'),
+            anypay_api_id=env.str('ANYPAY_API_ID'),
+            anypay_api_key=env.str('ANYPAY_API_KEY'),
+            anypay_project_id=env.int('ANYPAY_PROJECT_ID'),
         )
     )

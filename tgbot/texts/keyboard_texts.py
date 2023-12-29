@@ -1,11 +1,27 @@
 btn_start_menu = '🧑‍💻 Меню'
 
 btn_menu_add_money = '🏦 Пополнить Баланс'
+btn_menu_withdraw_money = 'Вывести'
+btn_auction = 'Аукцион'
+
+btn_auction_start = 'Начать Аукцион'
+btn_to_bot = 'Перейти в бот'
 
 btn_profile = 'Профиль'
 btn_menu_favorites = '⭐ Избранное'
 btn_menu_info = 'ℹ️ Информация'
-btn_info_menu_admin = '👤 Админ/Поддержка'
+btn_menu_rules = 'Правила'
+btn_info_payout = 'Выплаты'
+btn_info_news_chanel = 'Новостной Канал'
+btn_info_reserve_chanel = 'Резерв'
+btn_info_auction_chanel = 'Аукцион'
+btn_add_info_auction_chanel = 'Подключить Аукцион'
+btn_recommend = 'Рекомендуем'
+
+btn_rules_auction = 'Правила Аукцион'
+btn_rules_bot = 'Правила Бот'
+
+btn_info_menu_admin = '👤 Админ'
 btn_disable_advertising = '❇️ ОТКЛЮЧИТЬ РЕКЛАМУ'
 btn_referral_system = '👥 Реферальная система'
 
@@ -13,11 +29,6 @@ btn_cancel = '❌ Отмена'
 btn_clear = '🗑 Очистить'
 btn_close = '❌ Закрыть'
 btn_share = 'Поделиться'
-
-btn_terms_of_use = 'Пользовательское соглашение'
-btn_info_for_boys = 'Информация для мужчин'
-btn_info_for_girts = 'Информация для девушек'
-btn_main_use_info = 'Общая информация'
 
 btn_yes = '✅ Да'
 btn_no = '❎ Нет'
@@ -41,31 +52,15 @@ btn_reject = '❌ Отклонить'
 btn_buy_sub = 'Купить подписку'
 btn_extend_sub = 'Продлить подписку'
 
-btn_pay_banker = '💰 Оплата Banker'
-btn_pay_yoomoney = '💵 Оплата Юмани'
-btn_pay_yoomoney_card = '💳 Оплата с карты'
-btn_pay_yoomoney_money = '💵 Оплата с кошелька'
-
-btn_pay_qiwi = '💵 Оплата QIWI'
 btn_pay_crypto_bot = '🤖 Оплата CryptoBot'
-
+btn_pay_anypay_card = '💳 Оплата с карты'
+btn_pay_anypay_qiwi = '💵 Оплата с QIWI'
+btn_pay_anypay = '💵 Оплата QIWI / Карта'
 btn_check_payment = '✔️ Проверить платёж'
+btn_pay_payment = '🔗 Оплатить'
 
-btn_girl = 'Девушка'
-btn_boy = 'Мужчина'
-
-btn_search_girls = '🔍 Начать поиск'
-btn_find = '🔍 Поиск'
-btn_send_phone_number = 'Отправить номер телефона'
-btn_account_statistics = 'Статистика аккаунта'
-btn_change_account_data = 'Изменить данные аккаунта'
-btn_show_phone_number = 'Показать номер телефона'
-btn_buy_phone_number = 'Купить контакты'
+btn_payout_crypto_bot = '🤖 Вывод CryptoBot'
+btn_payout_anypay_card = '💳 Вывод на карту'
 
 btn_sub_type = '{name} ({price} {currency})'
-
-# countries
-btn_russia = 'Россия'
-
-# payments
-btn_telegram_payment = 'Официальная оплата телеграм'
+btn_show_balance = 'Мой баланс'

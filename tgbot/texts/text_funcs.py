@@ -1,3 +1,6 @@
+from typing import List
+
+
 def get_load_text(old_text: str, symbol=".") -> str:
     dots = ['....', '...', '..', '.']
     dots_count = old_text.count(symbol)
@@ -19,6 +22,12 @@ def get_load_text(old_text: str, symbol=".") -> str:
         new_dots = symbol * (dots_count + 1)
         old_text = old_text.replace(old_dots, new_dots)
         return old_text
+
+
+def logger_text_formatter(texts: List[str], join_str: str = None) -> str:
+    if join_str is None:
+        join_str = "\n" + " " * 37
+    return join_str.join(texts)
 
 
 if __name__ == '__main__':

@@ -13,3 +13,4 @@ redis==4.6.0
 SQLAlchemy==2.0.20
 asyncpg==0.28.0
 alembic==1.11.3
+apscheduler==3.10.4

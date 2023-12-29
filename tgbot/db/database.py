@@ -19,7 +19,7 @@ db_config = config.db
 def create_async_engine(url: Union[URL, str]) -> AsyncEngine:
     engine: AsyncEngine = _create_async_engine(
         url=url,
-        echo=True,
+        # echo=True,
     )
     return engine
 

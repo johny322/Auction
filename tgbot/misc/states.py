@@ -1,36 +1,23 @@
 from aiogram.fsm.state import StatesGroup, State
 
 
-class StatesGroupName(StatesGroup):
-    state_name = State()
+class Pay(StatesGroup):
+    pay_size = State()
+    confirm_pay_size = State()
+    crypto_bot_check = State()
+    anypay_email = State()
+    anypay_check = State()
 
 
-class GirlRegisterState(StatesGroup):
-    start = State()
-    full_name = State()
-    name = State()
-    country = State()
-    city = State()
-    birthday = State()
-    breast_size = State()
-    height = State()
-    weight = State()
-    about = State()
-    mobile_phone = State()
-    wa = State()
-    tg = State()
-    photos = State()
-    confirm_template = State()
-    confirm_photos = State()
-    send_check_photo = State()
-    confirm_check_photo = State()
-    confirm_all = State()
-
-
-class AdminReviewState(StatesGroup):
-    text = State()
+class AuctionStatesGroup(StatesGroup):
+    bet_size = State()
     confirm = State()
 
 
-class BoyState(StatesGroup):
-    search_city = State()
+class PayoutStatesGroup(StatesGroup):
+    payout_size = State()
+
+
+class Mailing(StatesGroup):
+    post = State()
+    sure = State()
