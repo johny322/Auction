@@ -40,22 +40,24 @@ async def new_bet_handler(query: types.CallbackQuery, callback_data: NewBetSizeC
         await query.answer(texts.cant_bet_two_times_message_text)
         return
     end_date = get_now_datetime() + datetime.timedelta(seconds=AUCTION_ROUND_TIME_LIMIT)
+    bets_count = active_auction.bets_count + 1
     await db_commands.update_auction(
         session, active_auction.id,
         last_bet_sum=new_bet_size,
         full_bet_sum=active_auction.full_bet_sum + new_bet_size,
         last_user_id=user.id,
-        end_date=end_date
+        end_date=end_date,
+        bets_count=bets_count
     )
-    auction_history: List[AuctionHistory] = await active_auction.awaitable_attrs.history
-    bets_count = 1 + len(auction_history)
-    # time_to_end = (active_auction.end_date - get_now_datetime()).strftime(TEMPLATE_DATE_FORMAT)
+    # auction_history: List[AuctionHistory] = await active_auction.awaitable_attrs.history
+    # bets_count = 1 + len(auction_history)
+    time_to_end = str(active_auction.end_date - get_now_datetime()).split('.')[0]
     text = texts.new_bet_auction_message_text.format(
         full_name=html_decoration.quote(query.from_user.full_name),
         username=query.from_user.username,
         bet_size=new_bet_size,
         bets_count=bets_count,
-        # time_to_end=time_to_end,
+        time_to_end=time_to_end,
         full_bet_sum=active_auction.full_bet_sum,
         last_bet_sum=new_bet_size,
         end_date=end_date.strftime(TEMPLATE_DATE_FORMAT)

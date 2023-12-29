@@ -12,19 +12,42 @@ from tgbot.constants.consts import TEMPLATE_DATE_FORMAT, ONLY_ONE_BET_WINNER_PER
 from tgbot.db import db_commands
 from tgbot.db.models import User, AuctionHistory, Auction, BotSettings, AuctionStatus
 from tgbot.misc.utils.date_worker import get_now_datetime
-from tgbot.misc.utils.messages import send_auction_message
+from tgbot.misc.utils.messages import send_auction_message, edit_auction_message
 
 
 async def start_main_auction_loop(bot: Bot, async_session: async_sessionmaker[AsyncSession], auction_id: int,
                                   config: Config):
+    counter = 0
     while True:
+        counter += 1
         async with async_session() as session:  # type: AsyncSession
             async with session.begin():
                 now = get_now_datetime()
-                auction = await db_commands.get_auction(session, auction_id)
+                auction: Auction = await db_commands.get_auction(session, auction_id)
                 if auction.end_date < now:
                     await end_auction(auction_id, session, bot, config)
                     return
+                # обновлять текст сообщения каждые 5 секунд
+                if counter % 5 == 0:
+                    last_user: User = await auction.awaitable_attrs.last_user
+                    time_to_end = str(auction.end_date - get_now_datetime()).split('.')[0]
+                    text = texts.new_bet_auction_message_text.format(
+                        full_name=html_decoration.quote(last_user.full_name),
+                        username=last_user.username,
+                        bet_size=auction.last_bet_sum,
+                        bets_count=auction.bets_count,
+                        time_to_end=time_to_end,
+                        full_bet_sum=auction.full_bet_sum,
+                        last_bet_sum=auction.last_bet_sum,
+                        end_date=auction.end_date.strftime(TEMPLATE_DATE_FORMAT)
+                    )
+                    await edit_auction_message(
+                        bot=bot,
+                        auction_message_id=auction.message_id,
+                        text=text,
+                        bet_size=auction.last_bet_sum,
+                        config=config
+                    )
         await asyncio.sleep(1)
 
 
@@ -51,7 +74,7 @@ async def end_auction(auction_id: int, session: AsyncSession, bot: Bot, config: 
     tg_bot_config = config.tg_bot
     auction = await db_commands.get_auction(session, auction_id)
     winner_user: User = await auction.awaitable_attrs.last_user
-    auction_history: List[AuctionHistory] = await auction.awaitable_attrs.history
+    # auction_history: List[AuctionHistory] = await auction.awaitable_attrs.history
     bot_settings = await db_commands.get_bot_settings(session)
     winner_percent = await get_winner_percents(auction, bot_settings)
     user_win_sum = math.ceil(auction.full_bet_sum * winner_percent / 100)
@@ -64,7 +87,7 @@ async def end_auction(auction_id: int, session: AsyncSession, bot: Bot, config: 
         full_name=html_decoration.quote(winner_user.full_name),
         username=winner_user.username,
         last_bet_sum=auction.last_bet_sum,
-        bets_count=len(auction_history),
+        bets_count=auction.bets_count,
         winner_percent=winner_percent,
         full_bet_sum=auction.full_bet_sum,
         user_win_sum=user_win_sum,

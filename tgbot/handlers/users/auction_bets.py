@@ -30,7 +30,7 @@ async def cancel_auction_bet_handler(message: types.Message, state: FSMContext, 
 
 
 @auction_bets_router.message(StateFilter(AuctionStatesGroup.bet_size))
-async def auction_bet_handler(message: types.Message, state: FSMContext, user: User):
+async def auction_bet_handler(message: types.Message, state: FSMContext, user: User, session: AsyncSession):
     bet_size = message.text
     try:
         bet_size = int(bet_size)
@@ -38,9 +38,19 @@ async def auction_bet_handler(message: types.Message, state: FSMContext, user: U
         await message.answer(
             texts.bad_first_bet_message_text + '\n' + texts.auction_first_bet_message_text.format(balance=user.balance)
         )
+        return
     if bet_size > user.balance:
         await message.answer(
             texts.no_balance_message_text + '\n' + texts.auction_first_bet_message_text.format(balance=user.balance)
+        )
+        return
+    bot_settings = await db_commands.get_bot_settings(session)
+    minimal_bet_size = bot_settings.minimal_bet_size
+    if bet_size < minimal_bet_size:
+        await message.answer(
+            texts.minimal_bet_size_warning_text.format(
+                minimal_bet_size) + '\n' + texts.auction_first_bet_message_text.format(
+                balance=user.balance)
         )
         return
     await state.update_data(bet_size=bet_size)
@@ -81,12 +91,23 @@ async def yes_confirm_bet_size_handler(query: types.CallbackQuery, state: FSMCon
         full_bet_sum=bet_size,
         status=AuctionStatus.active.value
     )
-    text = texts.start_auction_message_text.format(
+    new_text = texts.start_auction_message_text.format(
+        full_name=html_decoration.quote(query.from_user.full_name),
+        username=query.from_user.username,
+        bet_size=bet_size
+    )
+    time_to_end = str(auction.end_date - get_now_datetime()).split('.')[0]
+    text = texts.new_bet_auction_message_text.format(
         full_name=html_decoration.quote(query.from_user.full_name),
         username=query.from_user.username,
         bet_size=bet_size,
+        bets_count=auction.bets_count,
+        time_to_end=time_to_end,
+        full_bet_sum=auction.full_bet_sum,
+        last_bet_sum=bet_size,
         end_date=end_date.strftime(TEMPLATE_DATE_FORMAT)
     )
+
     await edit_auction_message(
         bot=bot,
         auction_message_id=first_auction_message_id,
@@ -100,9 +121,13 @@ async def yes_confirm_bet_size_handler(query: types.CallbackQuery, state: FSMCon
     )
     await query.message.delete()
     await query.message.answer(
-        text=texts.good_start_auction_message_text,
+        text=texts.good_start_auction_message_text.format(config.tg_bot.main_chanel_url),
         reply_markup=reply.main_keyboard()
     )
+    # await bot.send_message(
+    #     chat_id=config.tg_bot.main_chanel_id,
+    #     text=new_text
+    # )
     await session.commit()
     await start_main_auction_loop(
         bot=bot,

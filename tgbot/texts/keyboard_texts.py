@@ -1,13 +1,13 @@
 btn_start_menu = '🧑‍💻 Меню'
 
-btn_menu_add_money = '🏦 Пополнить Баланс'
+btn_menu_add_money = '💳 Пополнить'
 btn_menu_withdraw_money = 'Вывести'
 btn_auction = 'Аукцион'
 
 btn_auction_start = 'Начать Аукцион'
 btn_to_bot = 'Перейти в бот'
 
-btn_profile = 'Профиль'
+btn_profile = 'Личный Кабинет'
 btn_menu_favorites = '⭐ Избранное'
 btn_menu_info = 'ℹ️ Информация'
 btn_menu_rules = 'Правила'

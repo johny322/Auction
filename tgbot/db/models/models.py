@@ -58,6 +58,7 @@ class Auction(BaseModel):
     last_bet_sum: Mapped[int]  # размер последней ставки
     full_bet_sum: Mapped[int] = mapped_column(Integer, default=0)  # общая сумма
     history: Mapped[List['AuctionHistory']] = relationship(back_populates='auction')
+    bets_count: Mapped[int] = mapped_column(Integer, default=1)
 
 
 class AuctionHistory(BaseModel):

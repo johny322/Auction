@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from tgbot import texts
 from tgbot.config import load_config, Config
 from tgbot.constants.callback_factory import start_auction_payload
+from tgbot.constants.consts import ONLY_ONE_BET_WINNER_PERCENT
 from tgbot.db import db_commands
 from tgbot.keyboards import inline
 
@@ -22,7 +23,10 @@ async def send_first_auction_message(bot: Bot, async_session: async_sessionmaker
                 deep_link = await create_start_link(bot, payload=start_auction_payload, encode=True)
                 first_auction_message = await bot.send_message(
                     chat_id=main_chanel_id,
-                    text=texts.auction_start_message_text,
+                    text=texts.auction_start_message_text.format(
+                        winner_persent=100 - bot_settings.admin_percent,
+                        only_one_winner_persent=ONLY_ONE_BET_WINNER_PERCENT
+                    ),
                     reply_markup=inline.main_chanel_inline_keyboard(deep_link, bot_link)
                 )
                 await db_commands.update_bot_settings(
@@ -39,7 +43,10 @@ async def send_auction_message(bot: Bot, session: AsyncSession, config: Config):
     deep_link = await create_start_link(bot, payload=start_auction_payload, encode=True)
     auction_message = await bot.send_message(
         chat_id=main_chanel_id,
-        text=texts.auction_start_message_text,
+        text=texts.auction_start_message_text.format(
+            winner_persent=100 - bot_settings.admin_percent,
+            only_one_winner_persent=ONLY_ONE_BET_WINNER_PERCENT
+        ),
         reply_markup=inline.main_chanel_inline_keyboard(deep_link, bot_link)
     )
     await db_commands.update_bot_settings(
