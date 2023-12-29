@@ -91,11 +91,11 @@ async def yes_confirm_bet_size_handler(query: types.CallbackQuery, state: FSMCon
         full_bet_sum=bet_size,
         status=AuctionStatus.active.value
     )
-    new_text = texts.start_auction_message_text.format(
-        full_name=html_decoration.quote(query.from_user.full_name),
-        username=query.from_user.username,
-        bet_size=bet_size
-    )
+    # new_text = texts.start_auction_message_text.format(
+    #     full_name=html_decoration.quote(query.from_user.full_name),
+    #     username=query.from_user.username,
+    #     bet_size=bet_size
+    # )
     time_to_end = str(auction.end_date - get_now_datetime()).split('.')[0]
     text = texts.new_bet_auction_message_text.format(
         full_name=html_decoration.quote(query.from_user.full_name),
