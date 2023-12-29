@@ -37,7 +37,7 @@ async def on_startup_start_main_auction_loop(bot: Bot, async_session: async_sess
     await start_main_auction_loop(bot, async_session, active_auction.id, config)
 
 
-def get_winner_percents(auction: Auction, bot_settings: BotSettings) -> int:
+async def get_winner_percents(auction: Auction, bot_settings: BotSettings) -> int:
     history: List[AuctionHistory] = await auction.awaitable_attrs.history
     if len(history) <= 1:
         winner_percent = ONLY_ONE_BET_WINNER_PERCENT
@@ -53,7 +53,7 @@ async def end_auction(auction_id: int, session: AsyncSession, bot: Bot, config: 
     winner_user: User = await auction.awaitable_attrs.last_user
     auction_history: List[AuctionHistory] = await auction.awaitable_attrs.history
     bot_settings = await db_commands.get_bot_settings(session)
-    winner_percent = get_winner_percents(auction, bot_settings)
+    winner_percent = await get_winner_percents(auction, bot_settings)
     user_win_sum = math.ceil(auction.full_bet_sum * winner_percent / 100)
     auction_time = int(((get_now_datetime() - auction.created_at).total_seconds() % 3600) // 60)
     await db_commands.update_auction(
