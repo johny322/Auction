@@ -28,7 +28,6 @@ async def new_bet_handler(query: types.CallbackQuery, callback_data: NewBetSizeC
                           session: AsyncSession,
                           config: Config, bot: Bot):
     new_bet_size = callback_data.new_bet
-    html_decoration.quote()
     active_auction = await db_commands.has_active_auction(session)
     if not active_auction:
         await query.answer(texts.no_auction_already_has_message_text)

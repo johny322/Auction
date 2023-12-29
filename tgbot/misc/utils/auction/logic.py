@@ -38,7 +38,8 @@ async def on_startup_start_main_auction_loop(bot: Bot, async_session: async_sess
 
 
 def get_winner_percents(auction: Auction, bot_settings: BotSettings) -> int:
-    if auction.created_at == auction.updated_at:
+    history: List[AuctionHistory] = await auction.awaitable_attrs.history
+    if len(history) <= 1:
         winner_percent = ONLY_ONE_BET_WINNER_PERCENT
     else:
         admin_percent = bot_settings.admin_percent
@@ -54,7 +55,7 @@ async def end_auction(auction_id: int, session: AsyncSession, bot: Bot, config: 
     bot_settings = await db_commands.get_bot_settings(session)
     winner_percent = get_winner_percents(auction, bot_settings)
     user_win_sum = math.ceil(auction.full_bet_sum * winner_percent / 100)
-    auction_time = ((get_now_datetime() - auction.created_at).total_seconds() % 3600) // 60
+    auction_time = int(((get_now_datetime() - auction.created_at).total_seconds() % 3600) // 60)
     await db_commands.update_auction(
         session, auction.id,
         status=AuctionStatus.completed.value,
@@ -63,7 +64,7 @@ async def end_auction(auction_id: int, session: AsyncSession, bot: Bot, config: 
         full_name=html_decoration.quote(winner_user.full_name),
         username=winner_user.username,
         last_bet_sum=auction.last_bet_sum,
-        bets_count=1 + len(auction_history),
+        bets_count=len(auction_history),
         winner_percent=winner_percent,
         full_bet_sum=auction.full_bet_sum,
         user_win_sum=user_win_sum,
