@@ -7,7 +7,7 @@ After=multi-user.target
 
 Type=idle
 WorkingDirectory=/root/auction_bot
-ExecStart=/root/bot/venv/bin/python bot.py
+ExecStart=/root/auction_bot/venv/bin/python bot.py
 Restart=always
 
 [Install]
