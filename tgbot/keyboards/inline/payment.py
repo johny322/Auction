@@ -30,11 +30,10 @@ def check_pay_keyboard_inline(payment_type: str, pay_url: str = None) -> InlineK
 def pay_types_keyboard_inline(pay_size) -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
-
-            [InlineKeyboardButton(
-                text=keyboard_texts.btn_pay_anypay,
-                callback_data=PaymentCD(payment_type='anypay', pay_size=pay_size).pack()
-            )],
+            # [InlineKeyboardButton(
+            #     text=keyboard_texts.btn_pay_anypay,
+            #     callback_data=PaymentCD(payment_type='anypay', pay_size=pay_size).pack()
+            # )],
             [InlineKeyboardButton(
                 text=keyboard_texts.btn_pay_crypto_bot,
                 callback_data=PaymentCD(payment_type='crypto_bot', pay_size=pay_size).pack()

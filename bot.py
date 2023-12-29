@@ -124,7 +124,7 @@ async def main():
         payout_router,
         info_router,
         main_payment_router,
-        echo_router,
+        # echo_router,
     ]:
         dp.include_router(router)
 

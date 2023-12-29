@@ -3,6 +3,7 @@ import math
 from typing import List
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.utils.text_decorations import html_decoration
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -41,13 +42,19 @@ async def start_main_auction_loop(bot: Bot, async_session: async_sessionmaker[As
                         last_bet_sum=auction.last_bet_sum,
                         end_date=auction.end_date.strftime(TEMPLATE_DATE_FORMAT)
                     )
-                    await edit_auction_message(
-                        bot=bot,
-                        auction_message_id=auction.message_id,
-                        text=text,
-                        bet_size=auction.last_bet_sum,
-                        config=config
-                    )
+                    try:
+                        await edit_auction_message(
+                            bot=bot,
+                            auction_message_id=auction.message_id,
+                            text=text,
+                            bet_size=auction.last_bet_sum,
+                            config=config
+                        )
+                    except TelegramBadRequest as e:
+                        if 'same as a current content' in str(e):
+                            pass
+                        else:
+                            raise e
         await asyncio.sleep(1)
 
 
@@ -103,5 +110,9 @@ async def end_auction(auction_id: int, session: AsyncSession, bot: Bot, config: 
         session, winner_user.tg_user_id,
         balance=winner_user.balance + user_win_sum,
         wins_count=winner_user.wins_count + 1
+    )
+    await bot.send_message(
+        chat_id=winner_user.tg_user_id,
+        text=texts.auction_winner_message_text.format(user_win_sum=user_win_sum)
     )
     await send_auction_message(bot, session, config)

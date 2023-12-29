@@ -1,5 +1,3 @@
-btn_start_menu = '🧑‍💻 Меню'
-
 btn_menu_add_money = '💳 Пополнить'
 btn_menu_withdraw_money = 'Вывести'
 btn_auction = 'Аукцион'

@@ -19,17 +19,6 @@ def cancel_keyboard():
     return keyboard
 
 
-start_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [
-            KeyboardButton(text=keyboard_texts.btn_start_menu)
-        ]
-    ],
-    resize_keyboard=True,
-    one_time_keyboard=False,
-)
-
-
 def back_cancel_confirm_keyboard(back_btn=True):
     builder = ReplyKeyboardBuilder()
     if back_btn:
