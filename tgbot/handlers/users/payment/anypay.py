@@ -20,8 +20,8 @@ anypay_router = Router()
 
 
 @anypay_router.callback_query(PaymentCD.filter(F.payment_type == 'anypay'))
-async def anypay_handler(query: types.CallbackQuery, state: FSMContext, data: PaymentCD):
-    pay_size = data.pay_size
+async def anypay_handler(query: types.CallbackQuery, callback_data: PaymentCD, state: FSMContext):
+    pay_size = callback_data.pay_size
     # pay_size = query.data.split(":")[-1]
     if int(pay_size) < ANYPAY_MIN_PAYMENT_SIZE:
         await query.answer(
