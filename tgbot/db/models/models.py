@@ -21,6 +21,7 @@ class PayoutStatus(enum.Enum):
 class PayoutMethod(enum.Enum):
     anypay = 1
     crypto_bot = 2
+    card = 3
 
 
 class User(BaseModel):

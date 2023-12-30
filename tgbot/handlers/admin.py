@@ -43,9 +43,12 @@ async def confirm_payout_handler(query: types.CallbackQuery, callback_data: Conf
 
 
 @admin_router.callback_query(ConfirmPayoutCD.filter(F.confirm == False))
-async def confirm_payout_handler(query: types.CallbackQuery, callback_data: ConfirmPayoutCD, session: AsyncSession,
-                                 bot: Bot, config: Config):
-    await query.answer()
+async def confirm_payout_handler(query: types.CallbackQuery):
+    await query.answer(
+        text=texts.bad_payout_message_text,
+        show_alert=True
+    )
+    await query.message.edit_reply_markup()
 
 
 @admin_router.message(Command('mail'))

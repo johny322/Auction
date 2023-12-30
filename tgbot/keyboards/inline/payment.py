@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from tgbot.constants.callback_factory import PaymentCD, PaymentCheckCD, pay_cancel_cd, PayoutCD
+from tgbot.db.models import PayoutMethod
 from tgbot.texts import keyboard_texts
 
 
@@ -30,10 +31,10 @@ def check_pay_keyboard_inline(payment_type: str, pay_url: str = None) -> InlineK
 def pay_types_keyboard_inline(pay_size) -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
-            # [InlineKeyboardButton(
-            #     text=keyboard_texts.btn_pay_anypay,
-            #     callback_data=PaymentCD(payment_type='anypay', pay_size=pay_size).pack()
-            # )],
+            [InlineKeyboardButton(
+                text=keyboard_texts.btn_pay_anypay,
+                callback_data=PaymentCD(payment_type='anypay', pay_size=pay_size).pack()
+            )],
             [InlineKeyboardButton(
                 text=keyboard_texts.btn_pay_crypto_bot,
                 callback_data=PaymentCD(payment_type='crypto_bot', pay_size=pay_size).pack()
@@ -82,13 +83,19 @@ def payout_payment_type_keyboard_inline() -> InlineKeyboardMarkup:
     builder.row(
         InlineKeyboardButton(
             text=keyboard_texts.btn_payout_crypto_bot,
-            callback_data=PayoutCD(payment_type='crypto_bot').pack()
+            callback_data=PayoutCD(payment_type=PayoutMethod.crypto_bot.name).pack()
+        )
+    )
+    builder.row(
+        InlineKeyboardButton(
+            text=keyboard_texts.btn_payout_anypay_card,
+            callback_data=PayoutCD(payment_type=PayoutMethod.card.name).pack()
         )
     )
     # builder.row(
     #     InlineKeyboardButton(
     #         text=keyboard_texts.btn_payout_anypay_card,
-    #         callback_data=PayoutCD(payment_type='anypay').pack()
+    #         callback_data=PayoutCD(payment_type=PayoutMethod.anypay.name).pack()
     #     )
     # )
     return builder.as_markup()

@@ -71,6 +71,7 @@ start_auction_cd = 'start_auction'
 pay_cancel_cd = 'pay_cancel'
 start_auction_payload = 'start_auction'
 show_balance_in_chanel_cd = 'show_balance_ic'
+user_payout_confirm_payload = 'confirm_payout'
 admin_payout_payload = 'a_payout'
 admin_mail_payload = 'a_mail'
 

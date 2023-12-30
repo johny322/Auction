@@ -74,10 +74,18 @@ min_balance_warning_text = 'Сумма слишком маленькая\n' \
 admin_payout_message_text = 'Запрос на вывод {payout_size} руб\n' \
                             'Пользователь: {full_name} | @{username}\n' \
                             'Метод вывода: {payment_type}\n' \
+                            'Реквизиты: {payout_requisites}\n' \
                             'Текущий баланс: {balance} руб'
 no_user_balance_payout_message_text = 'У пользователя недостаточно баланса для вывода'
 good_payout_message_text = 'Выплата в размере {} руб успешно совершена'
+bad_payout_message_text = 'Выплата отменена'
 good_payout_chanel_message_text = '<b>Выплата</b>\n\n' \
                                   'Пользователь: {full_name} | @{username}\n' \
                                   'Сумма: {payout_sum} руб\n' \
                                   'Статус: {status}'
+card_payout_requisites_message_text = 'Введите номер карты для зачисления'
+crypto_bot_payout_requisites_message_text = 'Введите ссылку на пополнение кошелька crypto_bot'
+confirm_payout_message_text = 'Проверьте правильность введенных данных:\n' \
+                              'Сумма: {payout_size}\n' \
+                              'Куда: {payment_type}\n' \
+                              'Реквизиты: {payout_requisites}'

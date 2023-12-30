@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.text_decorations import html_decoration
 
 from tgbot import texts
-from tgbot.constants.callback_factory import ProfileMenuCD, PayoutCD
+from tgbot.constants.callback_factory import ProfileMenuCD, PayoutCD, user_payout_confirm_payload, YesNoCD
 from tgbot.constants.consts import CRYPTO_BOT_PAYOUT_MIN_SIZE, ANYPAY_BOT_PAYOUT_MIN_SIZE
 from tgbot.db.models import User, PayoutMethod
 from tgbot.keyboards import inline, reply
@@ -32,12 +32,6 @@ async def start_pay_cancel_handler(message: types.Message, state: FSMContext):
         text='Вывод отменен',
         reply_markup=reply.main_keyboard()
     )
-    logger.info(texts.logger_text_formatter(
-        [
-            f'user: {message.from_user.id} cancel add balance',
-            f'Пополнение отменено'
-        ]
-    ))
     await state.clear()
 
 
@@ -53,8 +47,7 @@ async def payout_sum_handler(query: types.CallbackQuery, callback_data: PayoutCD
 
 
 @payout_router.message(StateFilter(PayoutStatesGroup.payout_size))
-async def payout_size_handler(message: types.Message, state: FSMContext, user: User, bot: Bot, session: AsyncSession,
-                              config: Config):
+async def payout_size_handler(message: types.Message, state: FSMContext, user: User):
     if not message.text.isdigit():
         await message.answer(
             text='Неверный формат'
@@ -63,12 +56,12 @@ async def payout_size_handler(message: types.Message, state: FSMContext, user: U
     data = await state.get_data()
     payment_type = data['payment_type']
     payout_size = int(message.text)
-    if payout_size < CRYPTO_BOT_PAYOUT_MIN_SIZE and payment_type == 'crypto_bot':
+    if payout_size < CRYPTO_BOT_PAYOUT_MIN_SIZE and payment_type == PayoutMethod.crypto_bot.name:
         await message.answer(
             texts.min_balance_warning_text.format(CRYPTO_BOT_PAYOUT_MIN_SIZE)
         )
         return
-    if payout_size < ANYPAY_BOT_PAYOUT_MIN_SIZE and payment_type == 'anypay':
+    if payout_size < ANYPAY_BOT_PAYOUT_MIN_SIZE and payment_type == PayoutMethod.card.name:
         await message.answer(
             texts.min_balance_warning_text.format(ANYPAY_BOT_PAYOUT_MIN_SIZE)
         )
@@ -78,23 +71,69 @@ async def payout_size_handler(message: types.Message, state: FSMContext, user: U
             texts.no_balance_payout_message_text
         )
         return
-    await state.clear()
+    if payment_type == PayoutMethod.crypto_bot.name:
+        text = texts.crypto_bot_payout_requisites_message_text
+    if payment_type == PayoutMethod.card.name:
+        text = texts.card_payout_requisites_message_text
     await message.answer(
-        text=texts.request_for_payout_text.format(payout_size),
+        text=text
+    )
+    await state.update_data(payout_size=payout_size)
+    await state.set_state(PayoutStatesGroup.payout_requisites)
+
+
+@payout_router.message(StateFilter(PayoutStatesGroup.payout_requisites))
+async def payout_requisites_handler(message: types.Message, state: FSMContext):
+    payout_requisites = html_decoration.quote(message.text)
+    data = await state.get_data()
+    payment_type = data['payment_type']
+    payout_size = data['payout_size']
+    await message.answer(
+        texts.confirm_payout_message_text.format(
+            payout_size=payout_size,
+            payment_type=payment_type,
+            payout_requisites=payout_requisites
+        ),
+        reply_markup=inline.yes_no_keyboard_inline(user_payout_confirm_payload)
+    )
+    await state.update_data(payout_requisites=payout_requisites)
+    await state.set_state(PayoutStatesGroup.confirm)
+
+
+@payout_router.callback_query(
+    StateFilter(PayoutStatesGroup.confirm),
+    YesNoCD.filter((F.yes == True) & (F.payload == user_payout_confirm_payload))
+)
+async def yes_confirm_payout_handler(query: types.CallbackQuery, state: FSMContext, user: User, bot: Bot,
+                                     session: AsyncSession, config: Config):
+    data = await state.get_data()
+    payment_type = data['payment_type']
+    payout_size = data['payout_size']
+    payout_requisites = data['payout_requisites']
+    await state.clear()
+    await query.answer()
+    await query.message.edit_text(
+        text=texts.request_for_payout_text.format(payout_size)
+    )
+    await query.message.answer(
+        text=texts.choose_menu_text,
         reply_markup=reply.main_keyboard()
     )
     pl = PayoutLogic(bot, config, session)
     text = texts.admin_payout_message_text.format(
         payout_size=payout_size,
-        full_name=html_decoration.quote(message.from_user.full_name),
-        username=message.from_user.username,
+        full_name=html_decoration.quote(query.from_user.full_name),
+        username=query.from_user.username,
         payment_type=payment_type,
+        payout_requisites=payout_requisites,
         balance=user.balance
     )
-    if payment_type == 'anypay':
+    if payment_type == PayoutMethod.anypay.name:
         payout_method = PayoutMethod.anypay.value
-    if payment_type == 'crypto_bot':
+    if payment_type == PayoutMethod.crypto_bot.name:
         payout_method = PayoutMethod.crypto_bot.value
+    if payment_type == PayoutMethod.card.name:
+        payout_method = PayoutMethod.card.value
 
     await pl.create_payout(
         text=text,
@@ -102,3 +141,16 @@ async def payout_size_handler(message: types.Message, state: FSMContext, user: U
         payout_sum=payout_size,
         payout_method=payout_method
     )
+
+
+@payout_router.callback_query(
+    StateFilter(PayoutStatesGroup.confirm),
+    YesNoCD.filter((F.no == True) & (F.payload == user_payout_confirm_payload))
+)
+async def no_confirm_payout_handler(query: types.CallbackQuery, state: FSMContext):
+    await query.message.delete()
+    await query.message.answer(
+        text='Вывод отменен',
+        reply_markup=reply.main_keyboard()
+    )
+    await state.clear()

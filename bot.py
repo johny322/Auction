@@ -23,6 +23,7 @@ from tgbot.middlewares.actions import ChatActionMiddleware
 from tgbot.middlewares.config import ConfigMiddleware
 from tgbot.middlewares.db_objects import GetDbObjectsMiddleware
 from tgbot.middlewares.db_session import DbSessionMiddleware
+from tgbot.middlewares.join import JoinChannelMiddleware
 from tgbot.middlewares.objects import GetObjectsMiddleware
 from tgbot.middlewares.throttling import ThrottlingMiddleware
 from tgbot.misc.bot_commands import set_bot_commands
@@ -82,6 +83,14 @@ def register_global_middlewares(dp: Dispatcher, config, bot, logger, async_sessi
     dp.message.outer_middleware(DbSessionMiddleware(async_session))
     dp.callback_query.outer_middleware(DbSessionMiddleware(async_session))
     dp.inline_query.outer_middleware(DbSessionMiddleware(async_session))
+
+    tg_bot_config = config.tg_bot
+    dp.message.outer_middleware(
+        JoinChannelMiddleware(bot, tg_bot_config.main_chanel_id, tg_bot_config.main_chanel_url)
+    )
+    dp.callback_query.outer_middleware(
+        JoinChannelMiddleware(bot, tg_bot_config.main_chanel_id, tg_bot_config.main_chanel_url)
+    )
 
     # dp.message.outer_middleware(AntiFloodMiddleware(redis_storage))
     # dp.callback_query.outer_middleware(AntiFloodMiddleware(redis_storage))

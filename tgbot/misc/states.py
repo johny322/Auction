@@ -16,6 +16,8 @@ class AuctionStatesGroup(StatesGroup):
 
 class PayoutStatesGroup(StatesGroup):
     payout_size = State()
+    payout_requisites = State()
+    confirm = State()
 
 
 class Mailing(StatesGroup):
