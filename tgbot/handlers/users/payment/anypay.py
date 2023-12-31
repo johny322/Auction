@@ -9,7 +9,7 @@ from tgbot import texts
 from tgbot.constants.callback_factory import PaymentCD, PaymentCheckCD
 from tgbot.constants.consts import ANYPAY_MIN_PAYMENT_SIZE
 from tgbot.db import db_commands
-from tgbot.db.models import User
+from tgbot.db.models import User, PayoutMethod
 from tgbot.keyboards import inline, reply
 from tgbot.keyboards.inline import anypay_types_keyboard_inline, cancel_keyboard_inline
 from tgbot.misc.states import Pay
@@ -19,7 +19,7 @@ logger = logging.getLogger('main_logger')
 anypay_router = Router()
 
 
-@anypay_router.callback_query(PaymentCD.filter(F.payment_type == 'anypay'))
+@anypay_router.callback_query(PaymentCD.filter(F.payment_type == PayoutMethod.anypay.name))
 async def anypay_handler(query: types.CallbackQuery, callback_data: PaymentCD, state: FSMContext):
     pay_size = callback_data.pay_size
     # pay_size = query.data.split(":")[-1]
@@ -82,7 +82,7 @@ async def anypay_payment(message: types.Message, state: FSMContext):
             text=texts.pay_anypay_text.format(
                 pay_url=payment_url
             ),
-            reply_markup=inline.check_pay_keyboard_inline('anypay', payment_url),
+            reply_markup=inline.check_pay_keyboard_inline(PayoutMethod.anypay.name, payment_url),
             disable_web_page_preview=True
         )
 
@@ -95,7 +95,10 @@ async def anypay_payment(message: types.Message, state: FSMContext):
         )
 
 
-@anypay_router.callback_query(StateFilter(Pay.anypay_check), PaymentCheckCD.filter(F.payment_type == 'anypay_check'))
+@anypay_router.callback_query(
+    StateFilter(Pay.anypay_check),
+    PaymentCheckCD.filter(F.payment_type == PayoutMethod.anypay.name)
+)
 async def check_anypay_payment(query: types.CallbackQuery, state: FSMContext, user: User, session: AsyncSession):
     data = await state.get_data()
     payment: AnyPay = data['payment']

@@ -33,11 +33,11 @@ def pay_types_keyboard_inline(pay_size) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(
                 text=keyboard_texts.btn_pay_anypay,
-                callback_data=PaymentCD(payment_type='anypay', pay_size=pay_size).pack()
+                callback_data=PaymentCD(payment_type=PayoutMethod.anypay.name, pay_size=pay_size).pack()
             )],
             [InlineKeyboardButton(
                 text=keyboard_texts.btn_pay_crypto_bot,
-                callback_data=PaymentCD(payment_type='crypto_bot', pay_size=pay_size).pack()
+                callback_data=PaymentCD(payment_type=PayoutMethod.crypto_bot.name, pay_size=pay_size).pack()
             )],
             [InlineKeyboardButton(
                 text=keyboard_texts.btn_cancel,

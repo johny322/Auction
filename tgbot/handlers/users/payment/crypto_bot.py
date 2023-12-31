@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tgbot import texts
 from tgbot.constants.callback_factory import PaymentCD, PaymentCheckCD
 from tgbot.db import db_commands
-from tgbot.db.models import User
+from tgbot.db.models import User, PayoutMethod
 from tgbot.keyboards import inline, reply
 from tgbot.keyboards.inline import check_pay_keyboard_inline, cancel_keyboard_inline
 from tgbot.misc.states import Pay
@@ -18,7 +18,7 @@ logger = logging.getLogger('main_logger')
 crypto_bot_router = Router()
 
 
-@crypto_bot_router.callback_query(PaymentCD.filter(F.payment_type == 'crypto_bot'))
+@crypto_bot_router.callback_query(PaymentCD.filter(F.payment_type == PayoutMethod.crypto_bot.name))
 async def crypto_bot_handler(query: types.CallbackQuery, state: FSMContext):
     pay_size = int(query.data.split(":")[-1])
     payment = CryptoBot()
