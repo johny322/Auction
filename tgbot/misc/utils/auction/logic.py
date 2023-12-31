@@ -28,8 +28,9 @@ async def start_main_auction_loop(bot: Bot, async_session: async_sessionmaker[As
                 if auction.end_date < now:
                     await end_auction(auction_id, session, bot, config)
                     return
-                # обновлять текст сообщения каждые 5 секунд
-                if counter % 5 == 0:
+                # обновлять текст сообщения каждые 8 секунд
+                if counter == 8:
+                    counter = 0
                     last_user: User = await auction.awaitable_attrs.last_user
                     time_to_end = str(auction.end_date - get_now_datetime()).split('.')[0]
                     text = texts.new_bet_auction_message_text.format(

@@ -1,8 +1,6 @@
 import datetime
-from typing import List
 
 from aiogram import Router, types, F, Bot
-from aiogram.fsm.context import FSMContext
 from aiogram.utils.text_decorations import html_decoration
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,7 +9,7 @@ from tgbot.config import Config
 from tgbot.constants.callback_factory import show_balance_in_chanel_cd, NewBetSizeCD
 from tgbot.constants.consts import AUCTION_ROUND_TIME_LIMIT, TEMPLATE_DATE_FORMAT
 from tgbot.db import db_commands
-from tgbot.db.models import User, AuctionHistory
+from tgbot.db.models import User
 from tgbot.misc.utils.date_worker import get_now_datetime
 from tgbot.misc.utils.messages import edit_auction_message
 
@@ -20,6 +18,12 @@ bets_router = Router()
 
 @bets_router.callback_query(F.data == show_balance_in_chanel_cd)
 async def show_balance_in_chanel_handler(query: types.CallbackQuery, user: User):
+    if not user:
+        await query.answer(
+            text=texts.need_bot_sub_query_text,
+            show_alert=True
+        )
+        return
     await query.answer(texts.balance_message_text.format(user.balance))
 
 
@@ -27,6 +31,12 @@ async def show_balance_in_chanel_handler(query: types.CallbackQuery, user: User)
 async def new_bet_handler(query: types.CallbackQuery, callback_data: NewBetSizeCD, user: User,
                           session: AsyncSession,
                           config: Config, bot: Bot):
+    if not user:
+        await query.answer(
+            text=texts.need_bot_sub_query_text,
+            show_alert=True
+        )
+        return
     new_bet_size = callback_data.new_bet
     active_auction = await db_commands.has_active_auction(session)
     if not active_auction:
@@ -78,3 +88,4 @@ async def new_bet_handler(query: types.CallbackQuery, callback_data: NewBetSizeC
         session, user.id,
         balance=user.balance - new_bet_size
     )
+    await query.answer()
