@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from tgbot import texts
 from tgbot.config import Config
-from tgbot.constants.consts import TEMPLATE_DATE_FORMAT, ONLY_ONE_BET_WINNER_PERCENT
+from tgbot.constants.consts import TEMPLATE_DATE_FORMAT, ONLY_ONE_BET_WINNER_PERCENT, MESSAGE_UPDATE_TIME_IN_SEC
 from tgbot.db import db_commands
 from tgbot.db.models import User, AuctionHistory, Auction, BotSettings, AuctionStatus
 from tgbot.misc.utils.date_worker import get_now_datetime
@@ -28,12 +28,13 @@ async def start_main_auction_loop(bot: Bot, async_session: async_sessionmaker[As
                 if auction.end_date < now:
                     await end_auction(auction_id, session, bot, config)
                     return
-                # обновлять текст сообщения каждые 8 секунд
-                if counter == 8:
+                # обновлять текст сообщения каждые MESSAGE_UPDATE_TIME_IN_SEC секунд
+                if counter == MESSAGE_UPDATE_TIME_IN_SEC:
                     counter = 0
                     last_user: User = await auction.awaitable_attrs.last_user
                     time_to_end = str(auction.end_date - get_now_datetime()).split('.')[0]
                     text = texts.new_bet_auction_message_text.format(
+                        auction_id=auction.id,
                         full_name=html_decoration.quote(last_user.full_name),
                         username=last_user.username,
                         bet_size=auction.last_bet_sum,

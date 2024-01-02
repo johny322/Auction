@@ -3,17 +3,17 @@ import logging
 
 from aiogram import Router, types, F, Bot
 from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter
-from aiogram.filters import StateFilter, Command
+from aiogram.filters import StateFilter, Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tgbot import texts
 from tgbot.config import Config
-from tgbot.constants.callback_factory import ConfirmPayoutCD, admin_mail_payload, YesNoCD
+from tgbot.constants.callback_factory import ConfirmPayoutCD, admin_mail_payload, YesNoCD, admin_return_auction_payload
 from tgbot.db import db_commands
 from tgbot.filters.admin import AdminFilter
 from tgbot.keyboards import reply, inline
-from tgbot.misc.states import Mailing
+from tgbot.misc.states import Mailing, AuctionReturnStatesGroup
 from tgbot.misc.utils.payout import PayoutLogic, PayoutResult
 from tgbot.texts import keyboard_texts
 
@@ -219,3 +219,55 @@ async def get_users_count_handler(message: types.Message):
                          '❇️ /disable_adv <id или @username> - отключение рекламы пользователя',
                          parse_mode=None
                          )
+
+
+@admin_router.message(Command('auction_return'))
+async def return_auction_handler(message: types.Message, command: CommandObject, state: FSMContext):
+    auction_id = command.args
+    try:
+        auction_id = int(auction_id)
+    except ValueError:
+        return
+    await message.answer(
+        text=texts.admin_return_auction_bets_message_text.format(auction_id=auction_id),
+        reply_markup=inline.yes_no_keyboard_inline(admin_return_auction_payload)
+    )
+    await state.update_data(auction_id=auction_id)
+    await state.set_state(AuctionReturnStatesGroup.confirm)
+
+
+@admin_router.callback_query(
+    StateFilter(AuctionReturnStatesGroup.confirm),
+    YesNoCD.filter(
+        (F.yes == True) & (F.payload == admin_return_auction_payload)
+    )
+)
+async def yes_confirm_return_auction_handler(query: types.CallbackQuery, state: FSMContext,
+                                             session: AsyncSession, bot: Bot):
+    data = await state.get_data()
+    auction_id = data['auction_id']
+    await state.clear()
+    users_bets_data = await db_commands.return_auction_balance(session, auction_id)
+    # for user_id, bets_size in users_bets_data.items():
+    #     text = texts.return_auction_bets_message_text.format(auction_id=auction_id, bets_size=bets_size)
+    #     await send_message(bot, user_id, text)
+    #     await asyncio.sleep(0.2)
+    await query.message.edit_text(
+        text=texts.good_return_auction_bets_message_text.format(
+            auction_id=auction_id,
+            users_count=len(users_bets_data)
+        )
+    )
+
+
+@admin_router.callback_query(
+    StateFilter(AuctionReturnStatesGroup.confirm),
+    YesNoCD.filter(
+        (F.no == True) & (F.payload == admin_return_auction_payload)
+    )
+)
+async def no_confirm_return_auction_handler(query: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await query.message.edit_text(
+        texts.no_return_auction_bets_message_text
+    )

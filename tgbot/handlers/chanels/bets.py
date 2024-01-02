@@ -42,6 +42,9 @@ async def new_bet_handler(query: types.CallbackQuery, callback_data: NewBetSizeC
     if not active_auction:
         await query.answer(texts.no_auction_already_has_message_text)
         return
+    if new_bet_size <= active_auction.last_bet_sum:
+        await query.answer(texts.has_bet_lager_than_message_text.format(active_auction.last_bet_sum))
+        return
     if new_bet_size > user.balance:
         await query.answer(texts.no_balance_message_text)
         return
@@ -63,6 +66,7 @@ async def new_bet_handler(query: types.CallbackQuery, callback_data: NewBetSizeC
     # bets_count = 1 + len(auction_history)
     time_to_end = str(active_auction.end_date - get_now_datetime()).split('.')[0]
     text = texts.new_bet_auction_message_text.format(
+        auction_id=active_auction.id,
         full_name=html_decoration.quote(query.from_user.full_name),
         username=query.from_user.username,
         bet_size=new_bet_size,

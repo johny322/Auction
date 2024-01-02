@@ -98,6 +98,7 @@ async def yes_confirm_bet_size_handler(query: types.CallbackQuery, state: FSMCon
     # )
     time_to_end = str(auction.end_date - get_now_datetime()).split('.')[0]
     text = texts.new_bet_auction_message_text.format(
+        auction_id=auction.id,
         full_name=html_decoration.quote(query.from_user.full_name),
         username=query.from_user.username,
         bet_size=bet_size,

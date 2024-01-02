@@ -23,3 +23,7 @@ class PayoutStatesGroup(StatesGroup):
 class Mailing(StatesGroup):
     post = State()
     sure = State()
+
+
+class AuctionReturnStatesGroup(StatesGroup):
+    confirm = State()

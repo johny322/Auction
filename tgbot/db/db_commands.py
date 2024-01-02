@@ -1,7 +1,7 @@
 import asyncio
-from typing import Optional, Union, Sequence, Tuple
+from typing import Optional, Union, Sequence, Tuple, List
 
-from sqlalchemy import select, delete, update, func, exists
+from sqlalchemy import select, delete, update, func, exists, FetchedValue
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from tgbot.config import load_config
@@ -308,6 +308,22 @@ async def update_payout(session: AsyncSession, payout_id: int, **kwargs) -> Payo
     payout = await session.scalar(stmt)
     await session.flush()
     return payout
+
+
+async def return_auction_balance(session: AsyncSession, auction_id: int) -> dict:
+    auction = await get_auction(session, auction_id)
+    history: List[AuctionHistory] = await auction.awaitable_attrs.history
+    users_bets_data = {}
+    for h in history:
+        user_id = h.user_id
+        if user_id not in users_bets_data:
+            users_bets_data[user_id] = 0
+        users_bets_data[user_id] += h.bet
+    for user_id, bets_size in users_bets_data.items():
+        stmt = update(User).where(User.id == user_id).values(balance=User.balance + bets_size)
+        await session.execute(stmt)
+        await session.flush()
+    return users_bets_data
 
 
 # async def add_auction_history(session: AsyncSession, **kwargs) -> Optional[Auction]:

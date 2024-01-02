@@ -74,6 +74,7 @@ show_balance_in_chanel_cd = 'show_balance_ic'
 user_payout_confirm_payload = 'confirm_payout'
 admin_payout_payload = 'a_payout'
 admin_mail_payload = 'a_mail'
+admin_return_auction_payload = 'a_ret_auction'
 
 disable_advertising_callback = 'disable_adv'
 close_advertisement_message = 'close_adv'
